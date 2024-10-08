@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Persisters\Collection;
 use BadMethodCallException;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\ORM\Internal\CriteriaOrderings;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -256,6 +257,10 @@ class ManyToManyPersister extends AbstractCollectionPersister
 
             if ($value === null && ($operator === Comparison::EQ || $operator === Comparison::NEQ)) {
                 $whereClauses[] = sprintf('te.%s %s NULL', $field, $operator === Comparison::EQ ? 'IS' : 'IS NOT');
+            } elseif (is_array($value) && !empty($value) && $operator === Comparison::IN) {
+                $whereClauses[] = sprintf('te.%s %s (?)', $field, $operator);
+                $params[]       = $value;
+                $paramTypes[]   = Connection::PARAM_INT_ARRAY;
             } else {
                 $whereClauses[] = sprintf('te.%s %s ?', $field, $operator);
                 $params[]       = $value;
